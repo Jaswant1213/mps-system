@@ -261,27 +261,26 @@ function updateDashboardStats() {
   const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
   const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
 
-  // 1. Total Students Count Update
+  // 1. Total Students Update
   if (document.querySelector(".total-students")) {
     document.querySelector(".total-students").innerText = students.length;
   }
 
-  // 2. Income Calculate Logic
+  // 2. Income & Paid Status Logic
   const currentMonthIndex = new Date().getMonth(); // 0 = Jan, 1 = Feb...
-  const currentYear = new Date().getFullYear(); // 2026
+  const currentYear = new Date().getFullYear();
 
   let monthlyIncome = 0;
   let paidStudentsCount = 0;
 
-  // Har student ko check karein
   students.forEach((student) => {
     // Check karein is student ne iss mahine fees di hai ya nahi?
     const hasPaid = transactions.some((tx) => {
-      const txDate = new Date(tx.date); // Transaction ki date ko padho
+      const txDate = new Date(tx.date);
       return (
-        tx.studentId == student.id && // ID match honi chahiye
-        txDate.getMonth() === currentMonthIndex && // Mahina match hona chahiye
-        txDate.getFullYear() === currentYear // Saal match hona chahiye
+        (tx.studentId == student.id || tx.studentName === student.name) &&
+        txDate.getMonth() === currentMonthIndex &&
+        txDate.getFullYear() === currentYear
       );
     });
 
@@ -290,7 +289,7 @@ function updateDashboardStats() {
     }
   });
 
-  // Calculate Monthly Income from Transactions
+  // Calculate Monthly Income
   transactions.forEach((tx) => {
     const txDate = new Date(tx.date);
     if (
@@ -301,20 +300,23 @@ function updateDashboardStats() {
     }
   });
 
-  // 3. UI Update (Screen par dikhana)
+  // 3. UI Update (Income)
   if (document.querySelector(".income-display")) {
     document.querySelector(".income-display").innerText =
       monthlyIncome.toLocaleString() + " PKR";
   }
 
-  // Alerts Section Update
+  // 4. Alerts Section Update (YAHAN CHANGE KIYA HAI) ✅
   const unpaidStudentsCount = students.length - paidStudentsCount;
 
-  if (document.querySelector(".paid-count")) {
-    document.querySelector(".paid-count").innerText = paidStudentsCount;
+  // Ab hum Sahi Class Name use kar rahe hain:
+  if (document.querySelector(".stat-paid-count")) {
+    document.querySelector(".stat-paid-count").innerText = paidStudentsCount;
   }
-  if (document.querySelector(".unpaid-count")) {
-    document.querySelector(".unpaid-count").innerText = unpaidStudentsCount;
+
+  if (document.querySelector(".stat-unpaid-count")) {
+    document.querySelector(".stat-unpaid-count").innerText =
+      unpaidStudentsCount;
   }
 }
 
