@@ -4,39 +4,49 @@
 
 // 1. DATA SAVE KARNE KA FUNCTION (LocalStorage + Firebase)
 function saveData(key, data) {
-    // A. Pehle Computer mein save karo (Backup)
-    localStorage.setItem(key, JSON.stringify(data));
+  // A. Pehle Computer mein save karo (Backup)
+  localStorage.setItem(key, JSON.stringify(data));
 
-    // B. Phir Internet (Firebase) par bhejo
-    if (window.dbRef) {
-        window.dbSet(window.dbRef(window.db, key), data)
-            .then(() => console.log(`☁️ Synced ${key} to Cloud`))
-            .catch((e) => console.error("Sync Error:", e));
-    }
+  // B. Phir Internet (Firebase) par bhejo
+  if (window.dbRef) {
+    window
+      .dbSet(window.dbRef(window.db, key), data)
+      .then(() => console.log(`☁️ Synced ${key} to Cloud`))
+      .catch((e) => console.error("Sync Error:", e));
+  }
 }
 
 // 2. DATA LOAD KARNE KA FUNCTION (App Start hone par)
 async function loadFromCloud() {
-    if (!window.dbRef) return;
-    
-    console.log("🔄 Checking for new data...");
-    const keys = ["mphs_students", "mphs_fees", "mphs_users", "mphs_classes", "mphs_certificates", "mphs_marks"];
+  if (!window.dbRef) return;
 
-    for (const key of keys) {
-        try {
-            const snapshot = await window.dbGet(window.dbChild(window.dbRef(window.db), key));
-            if (snapshot.exists()) {
-                // Agar Cloud par data hai, to usay LocalStorage mein daal do
-                localStorage.setItem(key, JSON.stringify(snapshot.val()));
-                console.log(`✅ Loaded ${key} from Cloud`);
-            }
-        } catch (error) {
-            console.error("Load Error:", error);
-        }
+  console.log("🔄 Checking for new data...");
+  const keys = [
+    "mphs_students",
+    "mphs_fees",
+    "mphs_users",
+    "mphs_classes",
+    "mphs_certificates",
+    "mphs_marks",
+  ];
+
+  for (const key of keys) {
+    try {
+      const snapshot = await window.dbGet(
+        window.dbChild(window.dbRef(window.db), key),
+      );
+      if (snapshot.exists()) {
+        // Agar Cloud par data hai, to usay LocalStorage mein daal do
+        localStorage.setItem(key, JSON.stringify(snapshot.val()));
+        console.log(`✅ Loaded ${key} from Cloud`);
+      }
+    } catch (error) {
+      console.error("Load Error:", error);
     }
-    // UI Update karo
-    if(typeof updateDashboardStats === 'function') updateDashboardStats();
-    if(typeof renderStudentTable === 'function') renderStudentTable();
+  }
+  // UI Update karo
+  if (typeof updateDashboardStats === "function") updateDashboardStats();
+  if (typeof renderStudentTable === "function") renderStudentTable();
 }
 
 // 3. App Start hone ke 2 second baad data download karo
@@ -117,32 +127,27 @@ const DB = {
     }
 
     // 2. Students & Fees Setup
-    if (!localStorage.getItem("mphs_students"))
-      saveData("mphs_students", []);
+    if (!localStorage.getItem("mphs_students")) saveData("mphs_students", []);
 
-    if (!localStorage.getItem("mphs_tx"))
-      saveData("mphs_tx", []);
+    if (!localStorage.getItem("mphs_tx")) saveData("mphs_tx", []);
 
     // 3. History Arrays Setup
     if (!localStorage.getItem("mphs_certificates"))
       saveData("mphs_certificates", []);
-      
-    if (!localStorage.getItem("mphs_subjects"))
-      saveData("mphs_subjects", {});
-      
-    if (!localStorage.getItem("mphs_marks"))
-      saveData("mphs_marks", []);
+
+    if (!localStorage.getItem("mphs_subjects")) saveData("mphs_subjects", {});
+
+    if (!localStorage.getItem("mphs_marks")) saveData("mphs_marks", []);
 
     // 4. Admin User Setup
     if (!localStorage.getItem("mphs_users")) {
-      saveData(
-        "mphs_users",
-        [{ username: "admin", password: "123", role: "admin" }]
-      );
+      saveData("mphs_users", [
+        { username: "admin", password: "123", role: "admin" },
+      ]);
     }
-    
+
     // UI Update
-    if(typeof updateDashboardStats === 'function') updateDashboardStats();
+    if (typeof updateDashboardStats === "function") updateDashboardStats();
   },
 
   get: (key) => JSON.parse(localStorage.getItem(key)),
@@ -253,77 +258,63 @@ function switchTab(tabId) {
 // PART 3: DASHBOARD ANALYTICS
 
 function updateDashboardStats() {
-  const students = DB.get("mphs_students") || [];
-  const staff = DB.get("mphs_users") || [];
-  const txs = DB.get("mphs_tx") || [];
+  const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
+  const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
 
-  if (document.getElementById("dash-total-students"))
-    document.getElementById("dash-total-students").innerText = students.length;
-  if (document.getElementById("dash-total-staff"))
-    document.getElementById("dash-total-staff").innerText = staff.length;
+  // 1. Total Students Count Update
+  if (document.querySelector(".total-students")) {
+    document.querySelector(".total-students").innerText = students.length;
+  }
 
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  const thisMonthIncome = txs
-    .filter((t) => {
-      const txDate = new Date(t.date);
+  // 2. Income Calculate Logic
+  const currentMonthIndex = new Date().getMonth(); // 0 = Jan, 1 = Feb...
+  const currentYear = new Date().getFullYear(); // 2026
+
+  let monthlyIncome = 0;
+  let paidStudentsCount = 0;
+
+  // Har student ko check karein
+  students.forEach((student) => {
+    // Check karein is student ne iss mahine fees di hai ya nahi?
+    const hasPaid = transactions.some((tx) => {
+      const txDate = new Date(tx.date); // Transaction ki date ko padho
       return (
-        txDate.getMonth() === currentMonth &&
-        txDate.getFullYear() === currentYear
+        tx.studentId == student.id && // ID match honi chahiye
+        txDate.getMonth() === currentMonthIndex && // Mahina match hona chahiye
+        txDate.getFullYear() === currentYear // Saal match hona chahiye
       );
-    })
-    .reduce((sum, t) => sum + (t.total || 0), 0);
+    });
 
-  if (document.getElementById("dash-income"))
-    document.getElementById("dash-income").innerText =
-      thisMonthIncome.toLocaleString() + " PKR";
-
-  // Recent Transactions
-  const recentTable = document.getElementById("recent-tx-body");
-  if (recentTable) {
-    const sortedTxs = [...txs].sort(
-      (a, b) => new Date(b.date) - new Date(a.date),
-    );
-    const top4 = sortedTxs.slice(0, 4);
-
-    if (top4.length === 0) {
-      recentTable.innerHTML =
-        "<tr><td colspan='4' style='text-align:center; padding:20px; color:#999;'>No payments yet</td></tr>";
-    } else {
-      recentTable.innerHTML = top4
-        .map((t) => {
-          let foundStudent = students.find(
-            (s) => String(s.id) === String(t.studentId),
-          );
-          let displayName = foundStudent
-            ? foundStudent.name
-            : t.studentName || "Unknown";
-          let displayClass = foundStudent
-            ? foundStudent.className
-            : t.className || "-";
-          let receiver = t.collectedBy || "Admin";
-
-          return `<tr><td style="padding: 12px;"><div style="font-weight:600; color: #334155;">${displayName}</div><div style="font-size:0.75rem; color:#94a3b8;">${new Date(t.date).toLocaleDateString()}</div></td>
-                    <td style="padding: 12px;">${displayClass}</td><td style="padding: 12px; color: #10b981; font-weight:bold;">+${t.total}</td>
-                    <td style="padding: 12px;"><span class="status purple" style="font-size: 0.75rem; padding: 2px 8px;">${receiver}</span></td></tr>`;
-        })
-        .join("");
+    if (hasPaid) {
+      paidStudentsCount++;
     }
+  });
+
+  // Calculate Monthly Income from Transactions
+  transactions.forEach((tx) => {
+    const txDate = new Date(tx.date);
+    if (
+      txDate.getMonth() === currentMonthIndex &&
+      txDate.getFullYear() === currentYear
+    ) {
+      monthlyIncome += parseInt(tx.amount || 0);
+    }
+  });
+
+  // 3. UI Update (Screen par dikhana)
+  if (document.querySelector(".income-display")) {
+    document.querySelector(".income-display").innerText =
+      monthlyIncome.toLocaleString() + " PKR";
   }
-  // showing total studetn or opening students tab when clicking on total student card
-  const studentCard = document.querySelector(
-    ".stat-card:has(#dash-total-students)",
-  );
-  if (studentCard) {
-    studentCard.style.cursor = "pointer";
-    studentCard.onclick = () => switchTab("student-mgmt");
+
+  // Alerts Section Update
+  const unpaidStudentsCount = students.length - paidStudentsCount;
+
+  if (document.querySelector(".paid-count")) {
+    document.querySelector(".paid-count").innerText = paidStudentsCount;
   }
-  // showing staff or opening staff & admin tab when clicking on staff card
-  const staffCard = document.querySelector(".stat-card:has(#dash-total-staff)");
-  if (staffCard) {
-    staffCard.style.cursor = "pointer";
-    staffCard.onclick = () => switchTab("user-mgmt");
+  if (document.querySelector(".unpaid-count")) {
+    document.querySelector(".unpaid-count").innerText = unpaidStudentsCount;
   }
 }
 
