@@ -258,70 +258,62 @@ function switchTab(tabId) {
 // PART 3: DASHBOARD ANALYTICS
 
 function updateDashboardStats() {
-  console.log("🚀 Final Dashboard Fix...");
+  console.log("🚀 Updating Dashboard (All-Time Data)...");
 
+  // 1. Data Load
   const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
   const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
   const staff = JSON.parse(localStorage.getItem("mphs_users") || "[]");
 
-  // Helper: Screen Update
+  // Helper: UI Update
   function updateText(id, value) {
     const el = document.getElementById(id) || document.querySelector("." + id);
     if (el) el.innerText = value;
   }
 
-  // Current Date Setup
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-
-  let monthlyIncome = 0;
+  let totalIncome = 0;
   let paidStudentsCount = 0;
 
-  // --- 1. PAID STUDENTS COUNT ---
+  // --- 1. PAID STUDENTS COUNT (Logic: Kisi bhi mahine fees di ho) ---
   students.forEach((student) => {
+    // Check karein is student ki ID transaction list mein hai ya nahi?
     const hasPaid = transactions.some((tx) => {
-      const txDate = new Date(tx.date);
-
-      const isSameMonth = txDate.getMonth() === currentMonth;
-      const isSameYear = txDate.getFullYear() === currentYear;
+      // Sirf ID match karo (Date ka chakkar khatam)
       const isSameId = tx.studentId == student.id;
 
-      // Name Match (Case Insensitive)
+      // Naam se bhi check karlo (Backup safety)
       const txName = (tx.studentName || "").toLowerCase().trim();
       const stdName = (student.name || "").toLowerCase().trim();
       const isSameName = txName === stdName;
 
-      return isSameMonth && isSameYear && (isSameId || isSameName);
+      return isSameId || isSameName;
     });
 
-    if (hasPaid) paidStudentsCount++;
-  });
-
-  // --- 2. INCOME CALCULATION (FIXED: 'amount' -> 'total') ---
-  transactions.forEach((tx) => {
-    const txDate = new Date(tx.date);
-    if (
-      txDate.getMonth() === currentMonth &&
-      txDate.getFullYear() === currentYear
-    ) {
-      // YAHAN CHANGE KIYA HAI: 'total' uthaya hai
-      // Hum safety ke liye 'total' check karenge, agar wo na mile to 'amount'
-      let raw = (tx.total || tx.amount || "0").toString();
-
-      let clean = raw.replace(/[^0-9]/g, ""); // Text safayi
-      monthlyIncome += parseInt(clean) || 0;
+    if (hasPaid) {
+      paidStudentsCount++;
     }
   });
 
-  // Logs for Checking
-  console.log(`💰 Asli Income: ${monthlyIncome}`);
+  // --- 2. TOTAL INCOME CALCULATION (Logic: Saare paise gino) ---
+  transactions.forEach((tx) => {
+    // 'total' ya 'amount' jo bhi mile utha lo
+    let raw = (tx.total || tx.amount || "0").toString();
+
+    // Text safayi (Numbers only)
+    let clean = raw.replace(/[^0-9]/g, "");
+    totalIncome += parseInt(clean) || 0;
+  });
+
+  // Logs for Debugging
+  console.log(`✅ Total Paid Students: ${paidStudentsCount}`);
+  console.log(`💰 Total Income: ${totalIncome}`);
 
   // --- 3. DISPLAY UPDATE ---
   updateText("dash-total-students", students.length);
   updateText("dash-total-staff", staff.length);
-  updateText("dash-income", monthlyIncome.toLocaleString() + " PKR");
+  updateText("dash-income", totalIncome.toLocaleString() + " PKR");
 
+  // Alerts Update
   updateText("stat-paid-count", paidStudentsCount);
   updateText("stat-unpaid-count", students.length - paidStudentsCount);
 }
