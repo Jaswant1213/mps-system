@@ -550,7 +550,7 @@
                     class="btn-primary"
                     onclick="addToBasket()"
                     style="flex: 1"
-                  > 
+                  >
                     <i class="fa-solid fa-cart-plus"></i> Add Sibling
                   </button>
                 </div>
@@ -1203,42 +1203,45 @@
 
     <div id="toast-box" class="toast-container"></div>
     <script type="module">
-  // 1. Hum direct internet links use kar rahe hain (CDN)
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+      // 1. Hum direct internet links use kar rahe hain (CDN)
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        set,
+        get,
+        child,
+        onValue,
+      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-  // 2. Aapka Config (Maine databaseURL add kar diya hai)
-  const firebaseConfig = {
-    apiKey: "AIzaSyAvxmiGPDS4ykv_68suzTxHuih_SVDADKw",
-    authDomain: "mps-system-794e1.firebaseapp.com",
-    
-    // --- YE LINE ZAROORI HAI (Aapke Project ID se banayi hai) ---
-    databaseURL: "https://mps-system-794e1-default-rtdb.firebaseio.com", 
-    
-    projectId: "mps-system-794e1",
-    storageBucket: "mps-system-794e1.firebasestorage.app",
-    messagingSenderId: "793833383656",
-    appId: "1:793833383656:web:0c4accab88671e31a0cb5d"
-  };
+      // 2. Aapka Config (Maine databaseURL add kar diya hai)
+      const firebaseConfig = {
+        apiKey: "AIzaSyAvxmiGPDS4ykv_68suzTxHuih_SVDADKw",
+        authDomain: "mps-system-794e1.firebaseapp.com",
 
-  // 3. App Start
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+        // --- YE LINE ZAROORI HAI (Aapke Project ID se banayi hai) ---
+        databaseURL: "https://mps-system-794e1-default-rtdb.firebaseio.com",
 
-  // 4. Inko Global bana rahe hain taake main.js use kar sake
-  window.db = db;
-  window.dbRef = ref;
-  window.dbSet = set;
-  window.dbGet = get;
-  window.dbChild = child;
-  window.dbOnValue = onValue;
+        projectId: "mps-system-794e1",
+        storageBucket: "mps-system-794e1.firebasestorage.app",
+        messagingSenderId: "793833383656",
+        appId: "1:793833383656:web:0c4accab88671e31a0cb5d",
+      };
 
-  console.log("🔥 Firebase Connected Successfully!");
-</script>
-<script src="js/main.js"></script>
+      // 3. App Start
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
 
-<script src="js/main.js"></script>
+      // 4. Inko Global bana rahe hain taake main.js use kar sake
+      window.db = db;
+      window.dbRef = ref;
+      window.dbSet = set;
+      window.dbGet = get;
+      window.dbChild = child;
+      window.dbOnValue = onValue;
+
+      console.log("🔥 Firebase Connected Successfully!");
+    </script>
+    <script src="js/main.js"></script>
   </body>
 </html>
-
-
