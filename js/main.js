@@ -1,3 +1,46 @@
+// ==========================================
+// ☁️ FIREBASE CLOUD SYNC SYSTEM
+// ==========================================
+
+// 1. DATA SAVE KARNE KA FUNCTION (LocalStorage + Firebase)
+function saveData(key, data) {
+    // A. Pehle Computer mein save karo (Backup)
+    localStorage.setItem(key, JSON.stringify(data));
+
+    // B. Phir Internet (Firebase) par bhejo
+    if (window.dbRef) {
+        window.dbSet(window.dbRef(window.db, key), data)
+            .then(() => console.log(`☁️ Synced ${key} to Cloud`))
+            .catch((e) => console.error("Sync Error:", e));
+    }
+}
+
+// 2. DATA LOAD KARNE KA FUNCTION (App Start hone par)
+async function loadFromCloud() {
+    if (!window.dbRef) return;
+    
+    console.log("🔄 Checking for new data...");
+    const keys = ["mphs_students", "mphs_fees", "mphs_users", "mphs_classes", "mphs_certificates", "mphs_marks"];
+
+    for (const key of keys) {
+        try {
+            const snapshot = await window.dbGet(window.dbChild(window.dbRef(window.db), key));
+            if (snapshot.exists()) {
+                // Agar Cloud par data hai, to usay LocalStorage mein daal do
+                localStorage.setItem(key, JSON.stringify(snapshot.val()));
+                console.log(`✅ Loaded ${key} from Cloud`);
+            }
+        } catch (error) {
+            console.error("Load Error:", error);
+        }
+    }
+    // UI Update karo
+    if(typeof updateDashboardStats === 'function') updateDashboardStats();
+    if(typeof renderStudentTable === 'function') renderStudentTable();
+}
+
+// 3. App Start hone ke 2 second baad data download karo
+setTimeout(loadFromCloud, 2000);
 // PART 1: INITIALIZATION, AUTHENTICATION & HELPERS
 
 const CURRENT_USER = {
@@ -51,6 +94,7 @@ document.addEventListener("click", (e) => {
 // DATABASE INITIALIZATION
 const DB = {
   init() {
+    // 1. Classes Setup
     if (!localStorage.getItem("mphs_classes")) {
       const schoolClasses = [
         { id: 1, name: "ECE 1", fee: 1000 },
@@ -68,31 +112,43 @@ const DB = {
         { id: 13, name: "Class 9", fee: 2500 },
         { id: 14, name: "Class 10", fee: 2500 },
       ];
-      localStorage.setItem("mphs_classes", JSON.stringify(schoolClasses));
+      // CHANGE: Cloud par bhejne ke liye saveData use kiya
+      saveData("mphs_classes", schoolClasses);
     }
+
+    // 2. Students & Fees Setup
     if (!localStorage.getItem("mphs_students"))
-      localStorage.setItem("mphs_students", JSON.stringify([]));
+      saveData("mphs_students", []);
+
     if (!localStorage.getItem("mphs_tx"))
-      localStorage.setItem("mphs_tx", JSON.stringify([]));
+      saveData("mphs_tx", []);
 
-    // History Arrays
+    // 3. History Arrays Setup
     if (!localStorage.getItem("mphs_certificates"))
-      localStorage.setItem("mphs_certificates", JSON.stringify([]));
+      saveData("mphs_certificates", []);
+      
     if (!localStorage.getItem("mphs_subjects"))
-      localStorage.setItem("mphs_subjects", JSON.stringify({}));
+      saveData("mphs_subjects", {});
+      
     if (!localStorage.getItem("mphs_marks"))
-      localStorage.setItem("mphs_marks", JSON.stringify([]));
+      saveData("mphs_marks", []);
 
+    // 4. Admin User Setup
     if (!localStorage.getItem("mphs_users")) {
-      localStorage.setItem(
+      saveData(
         "mphs_users",
-        JSON.stringify([{ username: "admin", password: "123", role: "admin" }]),
+        [{ username: "admin", password: "123", role: "admin" }]
       );
     }
-    updateDashboardStats();
+    
+    // UI Update
+    if(typeof updateDashboardStats === 'function') updateDashboardStats();
   },
+
   get: (key) => JSON.parse(localStorage.getItem(key)),
-  set: (key, val) => localStorage.setItem(key, JSON.stringify(val)),
+
+  // MAIN CHANGE: Ab 'set' function seedha Firebase par data bhejega
+  set: (key, val) => saveData(key, val),
 };
 
 DB.init();
