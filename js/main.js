@@ -258,23 +258,35 @@ function switchTab(tabId) {
 // PART 3: DASHBOARD ANALYTICS
 
 function updateDashboardStats() {
+  console.log("🔄 Updating Dashboard Stats...");
+
   const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
   const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
 
-  // 1. Total Students Update
-  if (document.querySelector(".total-students")) {
-    document.querySelector(".total-students").innerText = students.length;
+  // --- SMART HELPER FUNCTION (Jo ID aur Class dono dhoondega) ---
+  function updateText(name, value) {
+    // Pehle ID dhoondo, agar na mile to Class dhoondo
+    const el =
+      document.getElementById(name) || document.querySelector("." + name);
+    if (el) {
+      el.innerText = value;
+    } else {
+      console.warn("⚠️ Box nahi mila: " + name);
+    }
   }
 
-  // 2. Income & Paid Status Logic
-  const currentMonthIndex = new Date().getMonth(); // 0 = Jan, 1 = Feb...
+  // 1. Total Students Update
+  updateText("total-students", students.length);
+
+  // 2. Calculations
+  const currentMonthIndex = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
   let monthlyIncome = 0;
   let paidStudentsCount = 0;
 
   students.forEach((student) => {
-    // Check karein is student ne iss mahine fees di hai ya nahi?
+    // Check payment using Name OR ID (Double Safety)
     const hasPaid = transactions.some((tx) => {
       const txDate = new Date(tx.date);
       return (
@@ -284,12 +296,9 @@ function updateDashboardStats() {
       );
     });
 
-    if (hasPaid) {
-      paidStudentsCount++;
-    }
+    if (hasPaid) paidStudentsCount++;
   });
 
-  // Calculate Monthly Income
   transactions.forEach((tx) => {
     const txDate = new Date(tx.date);
     if (
@@ -300,24 +309,14 @@ function updateDashboardStats() {
     }
   });
 
-  // 3. UI Update (Income)
-  if (document.querySelector(".income-display")) {
-    document.querySelector(".income-display").innerText =
-      monthlyIncome.toLocaleString() + " PKR";
-  }
+  // 3. Update Income & Alerts
+  updateText("income-display", monthlyIncome.toLocaleString() + " PKR");
 
-  // 4. Alerts Section Update (YAHAN CHANGE KIYA HAI) ✅
-  const unpaidStudentsCount = students.length - paidStudentsCount;
+  // Yahan wo ID use hogi jo screenshot mein thi
+  updateText("stat-paid-count", paidStudentsCount);
+  updateText("stat-unpaid-count", students.length - paidStudentsCount);
 
-  // Ab hum Sahi Class Name use kar rahe hain:
-  if (document.querySelector(".stat-paid-count")) {
-    document.querySelector(".stat-paid-count").innerText = paidStudentsCount;
-  }
-
-  if (document.querySelector(".stat-unpaid-count")) {
-    document.querySelector(".stat-unpaid-count").innerText =
-      unpaidStudentsCount;
-  }
+  console.log("✅ Dashboard Updated!");
 }
 
 // PART 4: STUDENT MANAGEMENT
