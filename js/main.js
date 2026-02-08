@@ -287,19 +287,15 @@ function updateDashboardStats() {
   let paidStudentsCount = 0;
 
   // Paid Students Count Logic
-  students.forEach((student) => {
-    const hasPaid = transactions.some((tx) => {
-      const txDate = new Date(tx.date);
-      return (
-        (tx.studentId == student.id || tx.studentName === student.name) &&
-        txDate.getMonth() === currentMonthIndex &&
-        txDate.getFullYear() === currentYear
-      );
-    });
-
-    if (hasPaid) paidStudentsCount++;
+  transactions.forEach((tx) => {
+    const txDate = new Date(tx.date);
+    if (
+      txDate.getMonth() === currentMonthIndex &&
+      txDate.getFullYear() === currentYear
+    ) {
+      monthlyIncome += parseInt(tx.amount || 0);
+    }
   });
-
   // Income Calculate Logic
   transactions.forEach((tx) => {
     const txDate = new Date(tx.date);
