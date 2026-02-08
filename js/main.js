@@ -1661,9 +1661,18 @@ document.addEventListener("DOMContentLoaded", () => {
   updateAlertStats();
 });
 
-// check dashboard state after each 2 sec
-setInterval(() => {
-  if (typeof updateDashboardStats === "function") {
-    updateDashboardStats();
-  }
-}, 2000);
+// AUTO-REFRESH ON TAB SWITCH
+const allSidebarButtons = document.querySelectorAll(
+  ".sidebar li, .sidebar a, .nav-link",
+);
+
+allSidebarButtons.forEach((btn) => {
+  btn.addEventListener("click", function () {
+    if (this.innerText.trim().includes("Dashboard")) {
+      console.log("🔄 Switching to Dashboard... Refreshing Stats!");
+      setTimeout(() => {
+        updateDashboardStats();
+      }, 100);
+    }
+  });
+});
