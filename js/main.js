@@ -258,7 +258,7 @@ function switchTab(tabId) {
 // PART 3: DASHBOARD ANALYTICS
 
 function updateDashboardStats() {
-  console.log("🚀 Debugging Dashboard Stats...");
+  console.log("🚀 Final Dashboard Fix...");
 
   const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
   const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
@@ -272,57 +272,50 @@ function updateDashboardStats() {
 
   // Current Date Setup
   const now = new Date();
-  const currentMonth = now.getMonth(); // 0 = Jan, 1 = Feb
+  const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
   let monthlyIncome = 0;
   let paidStudentsCount = 0;
 
-  // --- 1. PAID STUDENTS COUNT (Smart Matching) ---
+  // --- 1. PAID STUDENTS COUNT ---
   students.forEach((student) => {
     const hasPaid = transactions.some((tx) => {
       const txDate = new Date(tx.date);
 
-      // A. Date Check
       const isSameMonth = txDate.getMonth() === currentMonth;
       const isSameYear = txDate.getFullYear() === currentYear;
-
-      // B. ID Check (Number vs String fix)
       const isSameId = tx.studentId == student.id;
 
-      // C. Name Check (Capital/Small letter fix)
-      // "Jaswant" aur "jaswant" ko same samjhega
+      // Name Match (Case Insensitive)
       const txName = (tx.studentName || "").toLowerCase().trim();
       const stdName = (student.name || "").toLowerCase().trim();
       const isSameName = txName === stdName;
 
-      // Agar Date same hai AND (ID ya Naam same hai) -> To Paid hai
       return isSameMonth && isSameYear && (isSameId || isSameName);
     });
 
-    if (hasPaid) {
-      paidStudentsCount++;
-    }
+    if (hasPaid) paidStudentsCount++;
   });
 
-  // --- 2. INCOME CALCULATION (Clean Numbers) ---
+  // --- 2. INCOME CALCULATION (FIXED: 'amount' -> 'total') ---
   transactions.forEach((tx) => {
     const txDate = new Date(tx.date);
     if (
       txDate.getMonth() === currentMonth &&
       txDate.getFullYear() === currentYear
     ) {
-      // "+2500" ya "PKR 2500" me se sirf "2500" nikalna
-      let raw = tx.amount ? tx.amount.toString() : "0";
-      let clean = raw.replace(/[^0-9]/g, ""); // Sirf numbers bachenge
+      // YAHAN CHANGE KIYA HAI: 'total' uthaya hai
+      // Hum safety ke liye 'total' check karenge, agar wo na mile to 'amount'
+      let raw = (tx.total || tx.amount || "0").toString();
+
+      let clean = raw.replace(/[^0-9]/g, ""); // Text safayi
       monthlyIncome += parseInt(clean) || 0;
     }
   });
 
-  // Logs for Checking (Console mein dekhein)
-  console.log(`✅ Total Students: ${students.length}`);
-  console.log(`✅ Paid Counted: ${paidStudentsCount}`);
-  console.log(`✅ Total Income: ${monthlyIncome}`);
+  // Logs for Checking
+  console.log(`💰 Asli Income: ${monthlyIncome}`);
 
   // --- 3. DISPLAY UPDATE ---
   updateText("dash-total-students", students.length);
