@@ -260,14 +260,14 @@ function switchTab(tabId) {
 function updateDashboardStats() {
   console.log("🔄 Updating Dashboard Stats...");
 
-  // Data load karna
+  // 1. Data Load Karna
   const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
   const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
-  const staff = JSON.parse(localStorage.getItem("mphs_users") || "[]"); // Staff count ke liye
+  const staff = JSON.parse(localStorage.getItem("mphs_users") || "[]");
 
-  // --- SMART HELPER (Jo seedha ID pakdega) ---
+  // --- SMART HELPER (Jo ID dhoondega) ---
   function updateText(id, value) {
-    const el = document.getElementById(id);
+    const el = document.getElementById(id); // Sirf ID dhoondega ab
     if (el) {
       el.innerText = value;
     } else {
@@ -275,20 +275,18 @@ function updateDashboardStats() {
     }
   }
 
-  // 1. Total Students Update (Aapka bataya hua ID)
-  updateText("dash-total-students", students.length);
+  // 2. UPDATED IDs (Jo tumne abhi batayi hain) ✅
+  updateText("dash-total-students", students.length); // 24 Students
+  updateText("dash-total-staff", staff.length); // 3 Staff
 
-  // 2. Total Staff Update (Aapka bataya hua ID)
-  updateText("dash-total-staff", staff.length);
-
-  // 3. Income & Status Calculations
+  // 3. Income & Paid Status Calculations
   const currentMonthIndex = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
   let monthlyIncome = 0;
   let paidStudentsCount = 0;
 
-  // Paid Students Ginte hain
+  // Paid Students Count Logic
   students.forEach((student) => {
     const hasPaid = transactions.some((tx) => {
       const txDate = new Date(tx.date);
@@ -302,7 +300,7 @@ function updateDashboardStats() {
     if (hasPaid) paidStudentsCount++;
   });
 
-  // Income Calculate karte hain
+  // Income Calculate Logic
   transactions.forEach((tx) => {
     const txDate = new Date(tx.date);
     if (
@@ -313,15 +311,14 @@ function updateDashboardStats() {
     }
   });
 
-  // 4. Update Income & Alerts
-  // Income (Aapka bataya hua ID)
+  // 4. Update Income & Alerts (Sahi IDs ke saath) ✅
   updateText("dash-income", monthlyIncome.toLocaleString() + " PKR");
 
-  // Bottom Alerts (Ye pehle fix kiye the)
+  // Ye neche wale pehle hi theek ho gaye the, inhein wese hi rakha hai
   updateText("stat-paid-count", paidStudentsCount);
   updateText("stat-unpaid-count", students.length - paidStudentsCount);
 
-  console.log("✅ Dashboard Fully Updated!");
+  console.log("✅ Dashboard Fully Updated with NEW IDs!");
 }
 
 // PART 4: STUDENT MANAGEMENT
