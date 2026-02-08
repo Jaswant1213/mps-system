@@ -258,16 +258,17 @@ function switchTab(tabId) {
 // PART 3: DASHBOARD ANALYTICS
 
 function updateDashboardStats() {
-  console.log("🔄 Updating Dashboard Stats...");
+  console.log("🚀 Starting Dashboard Update...");
 
   // 1. Data Load Karna
   const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
   const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
   const staff = JSON.parse(localStorage.getItem("mphs_users") || "[]");
 
-  // --- SMART HELPER (Jo ID dhoondega) ---
+  // --- Helper: Screen par likhne wala function ---
   function updateText(id, value) {
-    const el = document.getElementById(id); // Sirf ID dhoondega ab
+    // Pehle ID dhoondo, na mile to Class dhoondo
+    const el = document.getElementById(id) || document.querySelector("." + id);
     if (el) {
       el.innerText = value;
     } else {
@@ -275,58 +276,68 @@ function updateDashboardStats() {
     }
   }
 
-  // 2. UPDATED IDs (Jo tumne abhi batayi hain) ✅
-  updateText("dash-total-students", students.length); // 24 Students
-  updateText("dash-total-staff", staff.length); // 3 Staff
-
-  // 3. Income & Paid Status Calculations
-  const currentMonthIndex = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  // 2. Dates Set Karna (Current Month & Year)
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0 = Jan, 1 = Feb
+  const currentYear = now.getFullYear(); // 2026
 
   let monthlyIncome = 0;
   let paidStudentsCount = 0;
 
-  // Paid Students Count Logic
-  transactions.forEach((tx) => {
-    const txDate = new Date(tx.date);
-    if (
-      txDate.getMonth() === currentMonthIndex &&
-      txDate.getFullYear() === currentYear
-    ) {
-      monthlyIncome += parseInt(tx.amount || 0);
+  console.log(
+    `📅 Checking for: Month ${currentMonth + 1}, Year ${currentYear}`,
+  );
+
+  // 3. Paid Students Ginti (Logic Fixed) ✅
+  students.forEach((student) => {
+    // Check karein is student ki koi transaction hai is mahine?
+    const hasPaid = transactions.some((tx) => {
+      const txDate = new Date(tx.date);
+
+      // Match Logic: ID ya Name same ho + Mahina same ho + Saal same ho
+      const isSameUser =
+        tx.studentId == student.id || tx.studentName === student.name;
+      const isSameMonth = txDate.getMonth() === currentMonth;
+      const isSameYear = txDate.getFullYear() === currentYear;
+
+      return isSameUser && isSameMonth && isSameYear;
+    });
+
+    if (hasPaid) {
+      paidStudentsCount++;
     }
   });
-  // Income Calculate Logic
+
+  // 4. Income Calculation (Cleaning Logic Added) ✅
   transactions.forEach((tx) => {
     const txDate = new Date(tx.date);
 
-    // Check Date (Current Month & Year)
     if (
-      txDate.getMonth() === currentMonthIndex &&
+      txDate.getMonth() === currentMonth &&
       txDate.getFullYear() === currentYear
     ) {
-      // Amount safayi abhiyan: "Rs. 2,500" -> "2500"
-      // Ye code sirf numbers dhoond kar nikalega
+      // Amount ko saaf karna (agar "+2500" ya "2,500" likha ho to sirf 2500 uthana)
       let rawAmount = tx.amount ? tx.amount.toString() : "0";
-      let cleanAmount = rawAmount.replace(/[^0-9]/g, ""); // Sab kuch hata do siwaye numbers ke
-
+      let cleanAmount = rawAmount.replace(/[^0-9]/g, ""); // Sirf digits bachenge
       let finalAmount = parseInt(cleanAmount) || 0;
 
-      console.log(`Adding: ${finalAmount} (Original: ${tx.amount})`); // Console mein saboot dekhein
       monthlyIncome += finalAmount;
     }
   });
 
-  // 4. Update Income & Alerts (Sahi IDs ke saath) ✅
+  console.log(`💰 Calculated Income: ${monthlyIncome}`);
+  console.log(`👨‍🎓 Paid Students: ${paidStudentsCount}`);
+
+  // 5. Screen Update (Final IDs) ✅
+  updateText("dash-total-students", students.length);
+  updateText("dash-total-staff", staff.length);
   updateText("dash-income", monthlyIncome.toLocaleString() + " PKR");
 
-  // Ye neche wale pehle hi theek ho gaye the, inhein wese hi rakha hai
   updateText("stat-paid-count", paidStudentsCount);
   updateText("stat-unpaid-count", students.length - paidStudentsCount);
 
-  console.log("✅ Dashboard Fully Updated with NEW IDs!");
+  console.log("✅ Dashboard Update Complete!");
 }
-
 // PART 4: STUDENT MANAGEMENT
 function renderClassCards() {
   const clss = DB.get("mphs_classes");
