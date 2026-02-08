@@ -1660,3 +1660,10 @@ function updateAlertStats() {
 document.addEventListener("DOMContentLoaded", () => {
   updateAlertStats();
 });
+
+// check dashboard state after each 2 sec
+setInterval(() => {
+  if (typeof updateDashboardStats === "function") {
+    updateDashboardStats();
+  }
+}, 2000);
