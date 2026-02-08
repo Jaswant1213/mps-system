@@ -258,9 +258,6 @@ function switchTab(tabId) {
 // PART 3: DASHBOARD ANALYTICS
 
 function updateDashboardStats() {
-  console.log("🚀 Updating Dashboard (All-Time Data)...");
-
-  // 1. Data Load
   const students = JSON.parse(localStorage.getItem("mphs_students") || "[]");
   const transactions = JSON.parse(localStorage.getItem("mphs_tx") || "[]");
   const staff = JSON.parse(localStorage.getItem("mphs_users") || "[]");
@@ -273,47 +270,43 @@ function updateDashboardStats() {
 
   let totalIncome = 0;
   let paidStudentsCount = 0;
+  let unpaidList = [];
 
-  // --- 1. PAID STUDENTS COUNT (Logic: Kisi bhi mahine fees di ho) ---
+  // --- 1. PAID STUDENTS COUNT (3-Level Matching) ---
   students.forEach((student) => {
-    // Check karein is student ki ID transaction list mein hai ya nahi?
     const hasPaid = transactions.some((tx) => {
-      // Sirf ID match karo (Date ka chakkar khatam)
-      const isSameId = tx.studentId == student.id;
+      const txId = String(tx.studentId || "").trim();
+      const stdId = String(student.id || "").trim();
 
-      // Naam se bhi check karlo (Backup safety)
       const txName = (tx.studentName || "").toLowerCase().trim();
       const stdName = (student.name || "").toLowerCase().trim();
-      const isSameName = txName === stdName;
 
-      return isSameId || isSameName;
+      if (txId && stdId && txId === stdId) return true;
+      if (txName === stdName) return true;
+      if (txName.length > 3 && stdName.includes(txName)) return true;
+      if (stdName.length > 3 && txName.includes(stdName)) return true;
+
+      return false;
     });
 
     if (hasPaid) {
       paidStudentsCount++;
+    } else {
+      unpaidList.push(student.name);
     }
   });
 
-  // --- 2. TOTAL INCOME CALCULATION (Logic: Saare paise gino) ---
+  // --- 2. INCOME CALCULATION ---
   transactions.forEach((tx) => {
-    // 'total' ya 'amount' jo bhi mile utha lo
     let raw = (tx.total || tx.amount || "0").toString();
-
-    // Text safayi (Numbers only)
     let clean = raw.replace(/[^0-9]/g, "");
     totalIncome += parseInt(clean) || 0;
   });
-
-  // Logs for Debugging
-  console.log(`✅ Total Paid Students: ${paidStudentsCount}`);
-  console.log(`💰 Total Income: ${totalIncome}`);
-
-  // --- 3. DISPLAY UPDATE ---
+  // --- 4. DISPLAY UPDATE ---
   updateText("dash-total-students", students.length);
   updateText("dash-total-staff", staff.length);
   updateText("dash-income", totalIncome.toLocaleString() + " PKR");
 
-  // Alerts Update
   updateText("stat-paid-count", paidStudentsCount);
   updateText("stat-unpaid-count", students.length - paidStudentsCount);
 }
