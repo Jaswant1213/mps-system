@@ -299,11 +299,21 @@ function updateDashboardStats() {
   // Income Calculate Logic
   transactions.forEach((tx) => {
     const txDate = new Date(tx.date);
+
+    // Check Date (Current Month & Year)
     if (
       txDate.getMonth() === currentMonthIndex &&
       txDate.getFullYear() === currentYear
     ) {
-      monthlyIncome += parseInt(tx.amount || 0);
+      // Amount safayi abhiyan: "Rs. 2,500" -> "2500"
+      // Ye code sirf numbers dhoond kar nikalega
+      let rawAmount = tx.amount ? tx.amount.toString() : "0";
+      let cleanAmount = rawAmount.replace(/[^0-9]/g, ""); // Sab kuch hata do siwaye numbers ke
+
+      let finalAmount = parseInt(cleanAmount) || 0;
+
+      console.log(`Adding: ${finalAmount} (Original: ${tx.amount})`); // Console mein saboot dekhein
+      monthlyIncome += finalAmount;
     }
   });
 
